@@ -237,8 +237,7 @@ app.start()
 ```
 
 ## Static Attributes
-Inspectors, Modifiers, Tools, and Data Sets are all nodes. Nodes are composed of input, output, and static attributes. Input and output nodes are just simple values in which you can override the label. Static attributes 
-To add a new static attribute, the developer must create a new class derived from `StaticNodeAttribute`. This new class must override the `submit` method. See a simple example below:
+Inspectors, Modifiers, Tools, and Data Sets are all nodes. Nodes are composed of input, output, and static attributes. Input and output nodes are just simple values in which you can override the label. To add a new static attribute, the developer must create a new class derived from `StaticNodeAttribute`. This new class must override the `submit` method. See a simple example below:
 
 ```python
 class NewAttribute(sdf.StaticNodeAttribute):
