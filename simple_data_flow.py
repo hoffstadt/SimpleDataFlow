@@ -487,8 +487,15 @@ class App:
         dpg.setup_registries()
         dpg.setup_viewport()
         dpg.set_viewport_title("Simple Data Flow")
+        node_editor = NodeEditor()
 
         with dpg.window() as main_window:
+            
+            with dpg.menu_bar():
+
+                with dpg.menu(label="Operations"):
+
+                    dpg.add_menu_item(label="Reset", callback=lambda:dpg.delete_item(node_editor.uuid, children_only=True))
 
             with dpg.group(horizontal=True):
 
@@ -499,7 +506,7 @@ class App:
 
                 # center panel
                 with dpg.child(width=-160, height=-1, border=False):
-                    node_editor = NodeEditor()
+
                     node_editor.submit(dpg.last_item())
 
                 # right panel
