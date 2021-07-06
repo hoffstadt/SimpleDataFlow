@@ -32,7 +32,7 @@ import dearpygui.dearpygui as dpg
 #     e. Call "finish".
 #   3. Create a static method called "factory" that creates a returns a "NewNode".
 #   4. Call either add_tool, add_modifier, or add_inspector method of app like so:
-#     a. "app.add_modifier(DragSource("NewNode", NewNode.factory, None))"
+#     a. "app.add_modifier("NewNode", NewNode.factory, None)"
 #     b. The 3rd argument of DragSource can be any data and will be passed into the factory's second argument
 ########################################################################################################################
 
@@ -464,23 +464,23 @@ class App:
         self.inspector_container = DragSourceContainer("Inspectors", 150, -500)
         self.modifier_container = DragSourceContainer("Modifiers", 150, -1)
 
-        self.add_data_set(DragSource("Test Data", App.data_node_factory, [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0]))
-        self.add_tool(DragSource("1D Data View", ViewNode_1D.factory, None))
-        self.add_tool(DragSource("2D Data View", ViewNode_2D.factory, None))
-        self.add_inspector(DragSource("MinMax", MaxMinNode.factory, None))
-        self.add_modifier(DragSource("Data Shifter", DataShifterNode.factory, None))
+        self.add_data_set("Test Data", [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0])
+        self.add_tool("1D Data View", ViewNode_1D.factory)
+        self.add_tool("2D Data View", ViewNode_2D.factory)
+        self.add_inspector("MinMax", MaxMinNode.factory)
+        self.add_modifier("Data Shifter", DataShifterNode.factory)
 
-    def add_data_set(self, drag_source):
-        self.data_set_container.add_drag_source(drag_source)
+    def add_data_set(self, label, data):
+        self.data_set_container.add_drag_source(DragSource(label, App.data_node_factory, data))
 
-    def add_tool(self, tool):
-        self.tool_container.add_drag_source(tool)
+    def add_tool(self, label, factory, data=None):
+        self.tool_container.add_drag_source(DragSource(label, factory, data))
 
-    def add_inspector(self, inspector):
-        self.inspector_container.add_drag_source(inspector)
+    def add_inspector(self, label, factory, data=None):
+        self.inspector_container.add_drag_source(DragSource(label, factory, data))
 
-    def add_modifier(self, modifier):
-        self.modifier_container.add_drag_source(modifier)
+    def add_modifier(self, label, factory, data=None):
+        self.modifier_container.add_drag_source(DragSource(label, factory, data))
 
     def start(self):
 
@@ -489,7 +489,9 @@ class App:
         dpg.set_viewport_title("Simple Data Flow")
 
         with dpg.window() as main_window:
-            with dpg.group(horizontal=True) as group:
+
+            with dpg.group(horizontal=True):
+
                 # left panel
                 with dpg.group() as left_panel:
                     self.data_set_container.submit(left_panel)
