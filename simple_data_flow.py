@@ -490,7 +490,7 @@ class App:
         node_editor = NodeEditor()
 
         with dpg.window() as main_window:
-            
+
             with dpg.menu_bar():
 
                 with dpg.menu(label="Operations"):
