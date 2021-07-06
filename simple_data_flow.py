@@ -451,12 +451,24 @@ class ViewNode_2D(Node):
 ########################################################################################################################
 class App:
 
+    @staticmethod
+    def data_node_factory(name, data):
+        node = Node(name, data)
+        node.add_output_attribute(OutputNodeAttribute("data"))
+        return node
+
     def __init__(self):
 
         self.data_set_container = DragSourceContainer("Data Sets", 150, -500)
         self.tool_container = DragSourceContainer("Tools", 150, -1)
         self.inspector_container = DragSourceContainer("Inspectors", 150, -500)
         self.modifier_container = DragSourceContainer("Modifiers", 150, -1)
+
+        self.add_data_set(DragSource("Test Data", App.data_node_factory, [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0]))
+        self.add_tool(DragSource("1D Data View", ViewNode_1D.factory, None))
+        self.add_tool(DragSource("2D Data View", ViewNode_2D.factory, None))
+        self.add_inspector(DragSource("MinMax", MaxMinNode.factory, None))
+        self.add_modifier(DragSource("Data Shifter", DataShifterNode.factory, None))
 
     def add_data_set(self, drag_source):
         self.data_set_container.add_drag_source(drag_source)
@@ -500,16 +512,4 @@ class App:
 if __name__ == "__main__":
 
     app = App()
-
-    def data_node_factory(name, data):
-        node = Node(name, data)
-        node.add_output_attribute(OutputNodeAttribute("data"))
-        return node
-
-    app.add_data_set(DragSource("Test Data", data_node_factory, [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0]))
-    app.add_tool(DragSource("1D Data View", ViewNode_1D.factory, None))
-    app.add_tool(DragSource("2D Data View", ViewNode_2D.factory, None))
-    app.add_inspector(DragSource("MinMax", MaxMinNode.factory, None))
-    app.add_modifier(DragSource("Data Shifter", DataShifterNode.factory, None))
-
     app.start()
