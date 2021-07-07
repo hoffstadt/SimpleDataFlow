@@ -193,7 +193,7 @@ class NodeEditor:
     def submit(self, parent):
 
         with dpg.node_editor(parent=parent, id=self.uuid, user_data=self, callback=NodeEditor._link_callback,
-                             drop_callback=lambda s, a, u: dpg.get_item_user_data(s).on_drop(s, a, u)):
+                             width=-160, height=-1, drop_callback=lambda s, a, u: dpg.get_item_user_data(s).on_drop(s, a, u)):
 
             for node in self._nodes:
                 node.submit(self.uuid)
@@ -497,7 +497,7 @@ class App:
 
                     dpg.add_menu_item(label="Reset", callback=lambda:dpg.delete_item(node_editor.uuid, children_only=True))
 
-            with dpg.group(horizontal=True):
+            with dpg.group(horizontal=True) as group:
 
                 # left panel
                 with dpg.group() as left_panel:
@@ -505,9 +505,7 @@ class App:
                     self.modifier_container.submit(left_panel)
 
                 # center panel
-                with dpg.child(width=-160, height=-1, border=False):
-
-                    node_editor.submit(dpg.last_item())
+                node_editor.submit(group)
 
                 # right panel
                 with dpg.group() as right_panel:
