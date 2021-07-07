@@ -463,12 +463,28 @@ class App:
         self.tool_container = DragSourceContainer("Tools", 150, -1)
         self.inspector_container = DragSourceContainer("Inspectors", 150, -500)
         self.modifier_container = DragSourceContainer("Modifiers", 150, -1)
+        self.plugin_menu_id = dpg.generate_uuid()
+        self.left_panel = dpg.generate_uuid()
+        self.right_panel = dpg.generate_uuid()
+
+        self.plugins = []
 
         self.add_data_set("Test Data", [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0])
         self.add_tool("1D Data View", ViewNode_1D.factory)
         self.add_tool("2D Data View", ViewNode_2D.factory)
         self.add_inspector("MinMax", MaxMinNode.factory)
         self.add_modifier("Data Shifter", DataShifterNode.factory)
+
+    def update(self):
+
+        with dpg.mutex():
+            dpg.delete_item(self.left_panel, children_only=True)
+            self.data_set_container.submit(self.left_panel)
+            self.modifier_container.submit(self.left_panel)
+
+            dpg.delete_item(self.right_panel, children_only=True)
+            self.inspector_container.submit(self.right_panel)
+            self.tool_container.submit(self.right_panel)
 
     def add_data_set(self, label, data):
         self.data_set_container.add_drag_source(DragSource(label, App.data_node_factory, data))
@@ -481,6 +497,9 @@ class App:
 
     def add_modifier(self, label, factory, data=None):
         self.modifier_container.add_drag_source(DragSource(label, factory, data))
+
+    def add_plugin(self, name, callback):
+        self.plugins.append((name, callback))
 
     def start(self):
 
@@ -495,22 +514,26 @@ class App:
 
                 with dpg.menu(label="Operations"):
 
-                    dpg.add_menu_item(label="Reset", callback=lambda:dpg.delete_item(node_editor.uuid, children_only=True))
+                    dpg.add_menu_item(label="Reset", callback=lambda: dpg.delete_item(node_editor.uuid, children_only=True))
+
+                with dpg.menu(label="Plugins"):
+                    for plugin in self.plugins:
+                        dpg.add_menu_item(label=plugin[0], callback=plugin[1])
 
             with dpg.group(horizontal=True) as group:
 
                 # left panel
-                with dpg.group() as left_panel:
-                    self.data_set_container.submit(left_panel)
-                    self.modifier_container.submit(left_panel)
+                with dpg.group(id=self.left_panel):
+                    self.data_set_container.submit(self.left_panel)
+                    self.modifier_container.submit(self.left_panel)
 
                 # center panel
                 node_editor.submit(group)
 
                 # right panel
-                with dpg.group() as right_panel:
-                    self.inspector_container.submit(right_panel)
-                    self.tool_container.submit(right_panel)
+                with dpg.group(id=self.right_panel):
+                    self.inspector_container.submit(self.right_panel)
+                    self.tool_container.submit(self.right_panel)
 
         dpg.set_primary_window(main_window, True)
         dpg.start_dearpygui()
