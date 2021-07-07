@@ -318,8 +318,8 @@ class DataShiftAttribute(StaticNodeAttribute):
 
         with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
                                 user_data=self, id=self._uuid):
-            dpg.add_input_int(label="x", id=self.x_shift, step=0, width=150)
-            dpg.add_input_int(label="y", id=self.y_shift, step=0, width=150)
+            dpg.add_input_float(label="x", id=self.x_shift, step=0, width=150)
+            dpg.add_input_float(label="y", id=self.y_shift, step=0, width=150)
 
 
 class DataShifterNode(Node):
