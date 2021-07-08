@@ -57,11 +57,9 @@ class NewAttribute(sdf.StaticNodeAttribute):
         super().__init__()
         self.custom_id = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-            dpg.add_input_int(label="Length", width=150, id=self.custom_id, readonly=True, step=0)
+        dpg.add_input_int(label="Length", width=150, id=self.custom_id, readonly=True, step=0)
 
 
 class NewNode(sdf.Node):
@@ -126,11 +124,9 @@ class NewAttribute(sdf.StaticNodeAttribute):
         super().__init__()
         self.custom_id = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-            dpg.add_input_int(label="Subtract Value", width=150, id=self.custom_id, step=0)
+        dpg.add_input_int(label="Subtract Value", width=150, id=self.custom_id, step=0)
 
 
 class NewNode(sdf.Node):
@@ -246,9 +242,7 @@ class NewAttribute(sdf.StaticNodeAttribute):
         super().__init__()
         self.custom_id = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
             dpg.add_input_int(label="Length", width=150, id=self.custom_id, readonly=True, step=0)
 ```

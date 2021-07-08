@@ -65,8 +65,8 @@ class StaticNodeAttribute:
     def end(self):
         dpg.pop_container_stack()
 
-    def submit(self, parent):
-        dpg.add_node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static, user_data=self, id=self._uuid)
+    def submit(self):
+        pass
 
 
 class OutputNodeAttribute:
@@ -158,7 +158,9 @@ class Node:
                 attribute.submit(self.uuid)
 
             for attribute in self._static_attributes:
-                attribute.submit(self.uuid)
+                with dpg.node_attribute(parent=self.uuid, attribute_type=dpg.mvNode_Attr_Static,
+                                        user_data=self, id=attribute._uuid):
+                    attribute.submit()
 
             for attribute in self._output_attributes:
                 attribute.submit(self.uuid)
@@ -212,7 +214,7 @@ class DragSource:
 
     def submit(self, parent):
 
-        dpg.add_button(label=self.label, parent=parent)
+        dpg.add_button(label=self.label, parent=parent, width=-1)
         dpg.set_item_theme(dpg.last_item(), _source_theme)
 
         with dpg.drag_payload(parent=dpg.last_item(), drag_data=(self, self._generator, self._data)):
@@ -253,13 +255,11 @@ class MaxMinAttribute(StaticNodeAttribute):
         self.min_id = dpg.generate_uuid()
         self.max_id = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-            with dpg.group(width=150):
-                dpg.add_text("Not Calculated", label="Min", show_label=True, id=self.min_id)
-                dpg.add_text("Not Calculated", label="Max", show_label=True, id=self.max_id)
+        with dpg.group(width=150):
+            dpg.add_text("Not Calculated", label="Min", show_label=True, id=self.min_id)
+            dpg.add_text("Not Calculated", label="Max", show_label=True, id=self.max_id)
 
 
 class MaxMinNode(Node):
@@ -314,12 +314,10 @@ class DataShiftAttribute(StaticNodeAttribute):
         self.x_shift = dpg.generate_uuid()
         self.y_shift = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-            dpg.add_input_float(label="x", id=self.x_shift, step=0, width=150)
-            dpg.add_input_float(label="y", id=self.y_shift, step=0, width=150)
+        dpg.add_input_float(label="x", id=self.x_shift, step=0, width=150)
+        dpg.add_input_float(label="y", id=self.y_shift, step=0, width=150)
 
 
 class DataShifterNode(Node):
@@ -373,11 +371,9 @@ class ViewNodeAttribute_1D(StaticNodeAttribute):
         super().__init__()
         self.simple_plot = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-            dpg.add_simple_plot(label="Data View", width=200, height=80, id=self.simple_plot)
+        dpg.add_simple_plot(label="Data View", width=200, height=80, id=self.simple_plot)
 
 
 class ViewNode_1D(Node):
@@ -407,14 +403,11 @@ class ViewNodeAttribute_2D(StaticNodeAttribute):
         self.x_axis = dpg.generate_uuid()
         self.y_axis = dpg.generate_uuid()
 
-    def submit(self, parent):
+    def submit(self):
 
-        with dpg.node_attribute(parent=parent, attribute_type=dpg.mvNode_Attr_Static,
-                                user_data=self, id=self._uuid):
-
-            with dpg.plot(height=400, width=400, no_title=True):
-                dpg.add_plot_axis(dpg.mvXAxis, label="", id=self.x_axis)
-                dpg.add_plot_axis(dpg.mvYAxis, label="", id=self.y_axis)
+        with dpg.plot(height=400, width=400, no_title=True):
+            dpg.add_plot_axis(dpg.mvXAxis, label="", id=self.x_axis)
+            dpg.add_plot_axis(dpg.mvYAxis, label="", id=self.y_axis)
 
 
 class ViewNode_2D(Node):
@@ -446,6 +439,98 @@ class ViewNode_2D(Node):
         self.finish()
 
 
+class CheckerAttribute(StaticNodeAttribute):
+
+    def __init__(self):
+        super().__init__()
+        self.expected_id = dpg.generate_uuid()
+        self.min_id = dpg.generate_uuid()
+        self.max_id = dpg.generate_uuid()
+        self.status_id = dpg.generate_uuid()
+
+        with dpg.theme() as self.success:
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [0, 255, 0], category=dpg.mvThemeCat_Core, id=self.success)
+
+        with dpg.theme() as self.fail:
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 0, 0], category=dpg.mvThemeCat_Core, id=self.fail)
+
+        with dpg.theme() as self.neutral:
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 255, 0], category=dpg.mvThemeCat_Core, id=self.neutral)
+
+    def submit(self):
+
+        with dpg.group(width=150):
+            dpg.add_input_float(label="Expected Value", step=0.0, id=self.expected_id, default_value=10)
+            dpg.add_input_float(label="Max Tolerance", step=0.0, id=self.max_id, default_value=.05)
+            dpg.add_input_float(label="Min Tolerance", step=0.0, id=self.min_id, default_value=.05)
+            dpg.add_radio_button(items=["Status"], id=self.status_id)
+            dpg.set_item_theme(self.status_id, self.neutral)
+
+
+class CheckerNode(Node):
+
+    @staticmethod
+    def factory(name, data):
+        node = CheckerNode(name, data)
+        return node
+
+    def __init__(self, label: str, data):
+        super().__init__(label, data)
+
+        self.add_input_attribute(InputNodeAttribute("Value"))
+        self.add_static_attribute(CheckerAttribute())
+
+    def execute(self):
+
+        # get input attribute data
+        value = round(self._input_attributes[0].get_data(), 5)
+
+        min_value = dpg.get_value(self._static_attributes[0].min_id)
+        max_value = dpg.get_value(self._static_attributes[0].max_id)
+        expect_value = dpg.get_value(self._static_attributes[0].expected_id)
+
+        if round(expect_value - min_value,5) <= value <= round(expect_value + max_value, 5):
+            dpg.set_item_theme(self._static_attributes[0].status_id, self._static_attributes[0].success)
+        else:
+            dpg.set_item_theme(self._static_attributes[0].status_id, self._static_attributes[0].fail)
+
+        self.finish()
+
+
+class ValueAttribute(StaticNodeAttribute):
+
+    def __init__(self):
+        super().__init__()
+        self.value = dpg.generate_uuid()
+
+    def submit(self):
+
+        with dpg.group(width=150):
+            dpg.add_input_float(label="Input Value", step=0, id=self.value, default_value=10)
+
+
+class ValueNode(Node):
+
+    @staticmethod
+    def factory(name, data):
+        node = ValueNode(name, data)
+        return node
+
+    def __init__(self, label: str, data):
+        super().__init__(label, data)
+
+        self.add_static_attribute(ValueAttribute())
+        self.add_output_attribute(OutputNodeAttribute("Value"))
+
+    def execute(self):
+
+        # get input attribute data
+        value = dpg.get_value(self._static_attributes[0].value)
+        self._output_attributes[0].execute(value)
+
+        self.finish()
+
+
 ########################################################################################################################
 # Application
 ########################################################################################################################
@@ -472,6 +557,8 @@ class App:
         self.add_data_set("Test Data", [-5.0, -5.0, -3.0, -3.0, 0.0, 0.0, 3.0, 3.0, 5.0, 5.0])
         self.add_tool("1D Data View", ViewNode_1D.factory)
         self.add_tool("2D Data View", ViewNode_2D.factory)
+        self.add_tool("Checker Tool", CheckerNode.factory)
+        self.add_tool("Value Tool", ValueNode.factory)
         self.add_inspector("MinMax", MaxMinNode.factory)
         self.add_modifier("Data Shifter", DataShifterNode.factory)
 
