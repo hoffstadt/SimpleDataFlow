@@ -37,18 +37,27 @@ import dearpygui.dearpygui as dpg
 ########################################################################################################################
 
 ########################################################################################################################
+# Setup
+########################################################################################################################
+dpg.create_context()
+dpg.create_viewport()
+dpg.setup_dearpygui()
+
+########################################################################################################################
 # Themes
 ########################################################################################################################
 
 with dpg.theme() as _source_theme:
-    dpg.add_theme_color(dpg.mvThemeCol_Button, [25, 119, 0])
-    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [25, 255, 0])
-    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, [25, 119, 0])
+    with dpg.theme_component(dpg.mvButton):
+        dpg.add_theme_color(dpg.mvThemeCol_Button, [25, 119, 0])
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [25, 255, 0])
+        dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, [25, 119, 0])
 
 with dpg.theme() as _completion_theme:
-    dpg.add_theme_color(dpg.mvNodeCol_TitleBar, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
-    dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
-    dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
+    with dpg.theme_component(dpg.mvAll):
+        dpg.add_theme_color(dpg.mvNodeCol_TitleBar, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
+        dpg.add_theme_color(dpg.mvNodeCol_TitleBarHovered, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
+        dpg.add_theme_color(dpg.mvNodeCol_TitleBarSelected, [37, 28, 138], category=dpg.mvThemeCat_Nodes)
 
 
 ########################################################################################################################
@@ -114,7 +123,7 @@ class Node:
         self._data = data
 
     def finish(self):
-        dpg.set_item_theme(self.uuid, _completion_theme)
+        dpg.bind_item_theme(self.uuid, _completion_theme)
 
     def add_input_attribute(self, attribute: InputNodeAttribute):
         self._input_attributes.append(attribute)
@@ -134,7 +143,7 @@ class Node:
 
     def submit(self, parent):
 
-        with dpg.node(parent=parent, label=self.label, id=self.uuid):
+        with dpg.node(parent=parent, label=self.label, tag=self.uuid):
 
             with dpg.node_attribute(attribute_type=dpg.mvNode_Attr_Static):
                 dpg.add_button(label="Execute", user_data=self, callback=lambda s, a, u: u.execute())
@@ -143,7 +152,7 @@ class Node:
                 attribute.submit(self.uuid)
 
             with dpg.node_attribute(parent=self.uuid, attribute_type=dpg.mvNode_Attr_Static,
-                                    user_data=self, id=self.static_uuid):
+                                    user_data=self, tag=self.static_uuid):
                 self.custom()
 
             for attribute in self._output_attributes:
@@ -170,19 +179,17 @@ class NodeEditor:
         self._nodes.append(node)
 
     def on_drop(self, sender, app_data, user_data):
-
         source, generator, data = app_data
         node = generator(source.label, data)
         node.submit(self.uuid)
         self.add_node(node)
 
     def submit(self, parent):
-
-        with dpg.node_editor(parent=parent, id=self.uuid, user_data=self, callback=NodeEditor._link_callback,
-                             width=-160, height=-1, drop_callback=lambda s, a, u: dpg.get_item_user_data(s).on_drop(s, a, u)):
-
-            for node in self._nodes:
-                node.submit(self.uuid)
+        
+        with dpg.child_window(width=-160, parent=parent, user_data=self, drop_callback=lambda s, a, u: dpg.get_item_user_data(s).on_drop(s, a, u)):
+            with dpg.node_editor(tag=self.uuid, callback=NodeEditor._link_callback, width=-1, height=-1):
+                for node in self._nodes:
+                    node.submit(self.uuid)
 
 
 ########################################################################################################################
@@ -199,7 +206,7 @@ class DragSource:
     def submit(self, parent):
 
         dpg.add_button(label=self.label, parent=parent, width=-1)
-        dpg.set_item_theme(dpg.last_item(), _source_theme)
+        dpg.bind_item_theme(dpg.last_item(), _source_theme)
 
         with dpg.drag_payload(parent=dpg.last_item(), drag_data=(self, self._generator, self._data)):
             dpg.add_text(f"Name: {self.label}")
@@ -221,7 +228,7 @@ class DragSourceContainer:
 
     def submit(self, parent):
 
-        with dpg.child(parent=parent, width=self._width, height=self._height, id=self._uuid, menubar=True) as child_parent:
+        with dpg.child_window(parent=parent, width=self._width, height=self._height, tag=self._uuid, menubar=True) as child_parent:
             with dpg.menu_bar():
                 dpg.add_menu(label=self._label)
 
@@ -252,8 +259,8 @@ class MaxMinNode(Node):
     def custom(self):
 
         with dpg.group(width=150):
-            dpg.add_text("Not Calculated", label="Min", show_label=True, id=self.min_id)
-            dpg.add_text("Not Calculated", label="Max", show_label=True, id=self.max_id)
+            dpg.add_text("Not Calculated", label="Min", show_label=True, tag=self.min_id)
+            dpg.add_text("Not Calculated", label="Max", show_label=True, tag=self.max_id)
 
     def execute(self):
 
@@ -305,8 +312,8 @@ class DataShifterNode(Node):
 
     def custom(self):
 
-        dpg.add_input_float(label="x", id=self.x_shift, step=0, width=150)
-        dpg.add_input_float(label="y", id=self.y_shift, step=0, width=150)
+        dpg.add_input_float(label="x", tag=self.x_shift, step=0, width=150)
+        dpg.add_input_float(label="y", tag=self.y_shift, step=0, width=150)
 
     def execute(self):
 
@@ -352,7 +359,7 @@ class ViewNode_1D(Node):
 
     def custom(self):
 
-        dpg.add_simple_plot(label="Data View", width=200, height=80, id=self.simple_plot)
+        dpg.add_simple_plot(label="Data View", width=200, height=80, tag=self.simple_plot)
 
     def execute(self):
 
@@ -380,8 +387,8 @@ class ViewNode_2D(Node):
     def custom(self):
 
         with dpg.plot(height=400, width=400, no_title=True):
-            dpg.add_plot_axis(dpg.mvXAxis, label="", id=self.x_axis)
-            dpg.add_plot_axis(dpg.mvYAxis, label="", id=self.y_axis)
+            dpg.add_plot_axis(dpg.mvXAxis, label="", tag=self.x_axis)
+            dpg.add_plot_axis(dpg.mvYAxis, label="", tag=self.y_axis)
 
     def execute(self):
 
@@ -416,21 +423,21 @@ class CheckerNode(Node):
         self.status_id = dpg.generate_uuid()
 
         with dpg.theme() as self.success:
-            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [0, 255, 0], category=dpg.mvThemeCat_Core, id=self.success)
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [0, 255, 0], category=dpg.mvThemeCat_Core, tag=self.success)
 
         with dpg.theme() as self.fail:
-            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 0, 0], category=dpg.mvThemeCat_Core, id=self.fail)
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 0, 0], category=dpg.mvThemeCat_Core, tag=self.fail)
 
         with dpg.theme() as self.neutral:
-            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 255, 0], category=dpg.mvThemeCat_Core, id=self.neutral)
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, [255, 255, 0], category=dpg.mvThemeCat_Core, tag=self.neutral)
 
     def custom(self):
 
         with dpg.group(width=150):
-            dpg.add_input_float(label="Expected Value", step=0.0, id=self.expected_id, default_value=10)
-            dpg.add_input_float(label="Max Tolerance", step=0.0, id=self.max_id, default_value=.05)
-            dpg.add_input_float(label="Min Tolerance", step=0.0, id=self.min_id, default_value=.05)
-            dpg.add_radio_button(items=["Status"], id=self.status_id)
+            dpg.add_input_float(label="Expected Value", step=0.0, tag=self.expected_id, default_value=10)
+            dpg.add_input_float(label="Max Tolerance", step=0.0, tag=self.max_id, default_value=.05)
+            dpg.add_input_float(label="Min Tolerance", step=0.0, tag=self.min_id, default_value=.05)
+            dpg.add_radio_button(items=["Status"], tag=self.status_id)
             dpg.set_item_theme(self.status_id, self.neutral)
 
     def execute(self):
@@ -467,7 +474,7 @@ class ValueNode(Node):
     def custom(self):
 
         with dpg.group(width=150):
-            dpg.add_input_float(label="Input Value", step=0, id=self.value, default_value=10)
+            dpg.add_input_float(label="Input Value", step=0, tag=self.value, default_value=10)
 
     def execute(self):
 
@@ -537,9 +544,9 @@ class App:
 
     def start(self):
 
-        dpg.setup_registries()
-        dpg.setup_viewport()
+        #dpg.setup_registries()
         dpg.set_viewport_title("Simple Data Flow")
+        dpg.show_viewport()
         node_editor = NodeEditor()
 
         with dpg.window() as main_window:
